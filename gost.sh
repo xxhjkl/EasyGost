@@ -114,7 +114,6 @@ function Install_ct()
         `rm -rf "$(pwd)"/gost`
         `rm -rf "$(pwd)"/gost.service`
         `rm -rf "$(pwd)"/config.json`
-        `rm -rf "$(pwd)"/gost.sh`
     else
         echo "${Red_font_prefix}gost没有安装成功，可以在Github[EasyGost]中提交issue${Font_color_suffix}"
         `rm -rf   "$(pwd)"/gost`
