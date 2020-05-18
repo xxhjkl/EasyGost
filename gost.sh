@@ -13,11 +13,11 @@ function checknew()
     echo -n 是否更新\(y/n\)\:
     read checknewnum
     if test $checknewnum = "y";then
-        cp -r /etc/gost /tmp/gost
+        `cp -r /etc/gost /tmp/`
         Install_ct
-        rm -rf /etc/gost
-        mv /tmp/gost /etc/gost
-        systemctl restart gost
+        `rm -rf /etc/gost`
+        `mv /tmp/gost /etc/`
+        `systemctl restart gost`
     else
         exit 0
     fi
@@ -349,7 +349,7 @@ echo && echo -e "                      gost 一键安装配置脚本
 ————————————
  ${Green_font_prefix}7.${Font_color_suffix} 新增gost转发配置
  ${Green_font_prefix}8.${Font_color_suffix} 查看现有gost配置
- ${Green_font_prefix}9.${Font_color_suffix} 删除现有gost配置
+ ${Green_font_prefix}9.${Font_color_suffix} 删除一则gost配置
 ————————————" && echo
 read -e -p " 请输入数字 [1-9]:" num
 case "$num" in
