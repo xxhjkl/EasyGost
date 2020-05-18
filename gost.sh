@@ -67,9 +67,10 @@ function check_new_ver()
 {
     ct_new_ver=$(wget --no-check-certificate -qO- -t2 -T3 https://api.github.com/repos/ginuerzh/gost/releases/latest| grep "tag_name"| head -n 1| awk -F ":" '{print $2}'| sed 's/\"//g;s/,//g;s/ //g;s/v//g')
     if [[ -z ${ct_new_ver} ]]; then
-        echo -e "${Error} gost 最新版本获取失败，请手动获取最新版本号[ https://github.com/ginuerzh/gost/releases ]"
-        read -e -p "请输入版本号 [ 格式 x.x.xx , 如 0.8.21 ] :" ct_new_ver
-        [[ -z "${ct_new_ver}" ]] && echo "取消..." && exit 1
+        ct_new_ver="2.11.0"
+        echo -e "${Error} gost 最新版本获取失败，正在下载v${ct_new_ver}版"
+        # read -e -p "请输入版本号 [ 格式 x.x.xx , 如 0.8.21 ] :" ct_new_ver
+        #[[ -z "${ct_new_ver}" ]] && echo "取消..." && exit 1
     else
         echo -e "${Info} gost 目前最新版本为 ${ct_new_ver}"
     fi
