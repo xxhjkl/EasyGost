@@ -1,13 +1,10 @@
-#!/bin/bash
-
+#! /bin/bash
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
-
 gost_conf_path="/etc/gost/config.json"
 raw_conf_path="/etc/gost/rawconf"
-
 function checknew()
 {
     checknew=$(gost -V 2>&1|awk '{print $2}')
@@ -16,80 +13,83 @@ function checknew()
     echo -n 是否更新\(y/n\)\:
     read checknewnum
     if test $checknewnum = "y";then
+        cp -r /etc/gost /tmp/gost
         Install_ct
+        rm -rf /etc/gost
+        mv /tmp/gost /etc/gost
+        systemctl restart gost
     else
         exit 0
     fi
 }
-
-check_sys(){
-	if [[ -f /etc/redhat-release ]]; then
-		release="centos"
-	elif cat /etc/issue | grep -q -E -i "debian"; then
-		release="debian"
-	elif cat /etc/issue | grep -q -E -i "ubuntu"; then
-		release="ubuntu"
-	elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
-		release="centos"
-	elif cat /proc/version | grep -q -E -i "debian"; then
-		release="debian"
-	elif cat /proc/version | grep -q -E -i "ubuntu"; then
-		release="ubuntu"
-	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
-		release="centos"
+function check_sys()
+{
+    if [[ -f /etc/redhat-release ]]; then
+        release="centos"
+    elif cat /etc/issue | grep -q -E -i "debian"; then
+        release="debian"
+    elif cat /etc/issue | grep -q -E -i "ubuntu"; then
+        release="ubuntu"
+    elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
+        release="centos"
+    elif cat /proc/version | grep -q -E -i "debian"; then
+        release="debian"
+    elif cat /proc/version | grep -q -E -i "ubuntu"; then
+        release="ubuntu"
+    elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
+        release="centos"
     fi
-	bit=$(uname -m)
+    bit=$(uname -m)
         if test "$bit" != "x86_64"; then
            echo "请输入你的芯片架构，/386/armv5/armv6/armv7/armv8"
            read bit
         else bit="amd64"
     fi
 }
-
-Installation_dependency(){
-	gzip_ver=$(gzip -V)
-	if [[ -z ${gzip_ver} ]]; then
-		if [[ ${release} == "centos" ]]; then
-			yum update
-			yum install -y gzip
-            yum install -y wget
-		else
-			apt-get update
-			apt-get install -y gzip
-            apt-get install -y wget
-		fi
-	fi
+function Installation_dependency()
+{
+    gzip_ver=$(gzip -V)
+    if [[ -z ${gzip_ver} ]]; then
+        if [[ ${release} == "centos" ]]; then
+            yum update
+            yum install -y gzip
+        else
+            apt-get update
+            apt-get install -y gzip
+        fi
+    fi
 }
-
-check_root(){
-	[[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
+function check_root()
+{
+    [[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
 }
-
-check_new_ver(){
-ct_new_ver=$(wget --no-check-certificate -qO- -t2 -T3 https://api.github.com/repos/ginuerzh/gost/releases/latest| grep "tag_name"| head -n 1| awk -F ":" '{print $2}'| sed 's/\"//g;s/,//g;s/ //g;s/v//g')
-if [[ -z ${ct_new_ver} ]]; then
-		echo -e "${Error} gost 最新版本获取失败，请手动获取最新版本号[ https://github.com/ginuerzh/gost/releases ]"
-		read -e -p "请输入版本号 [ 格式 x.x.xx , 如 0.8.21 ] :" ct_new_ver
-		[[ -z "${ct_new_ver}" ]] && echo "取消..." && exit 1
-	else
-		echo -e "${Info} gost 目前最新版本为 ${ct_new_ver}"
-	fi
+function check_new_ver()
+{
+    ct_new_ver=$(wget --no-check-certificate -qO- -t2 -T3 https://api.github.com/repos/ginuerzh/gost/releases/latest| grep "tag_name"| head -n 1| awk -F ":" '{print $2}'| sed 's/\"//g;s/,//g;s/ //g;s/v//g')
+    if [[ -z ${ct_new_ver} ]]; then
+        echo -e "${Error} gost 最新版本获取失败，请手动获取最新版本号[ https://github.com/ginuerzh/gost/releases ]"
+        read -e -p "请输入版本号 [ 格式 x.x.xx , 如 0.8.21 ] :" ct_new_ver
+        [[ -z "${ct_new_ver}" ]] && echo "取消..." && exit 1
+    else
+        echo -e "${Info} gost 目前最新版本为 ${ct_new_ver}"
+    fi
 }
-check_file(){
-            if test ! -d "/usr/lib/systemd/system/";then
-             `mkdir /usr/lib/systemd/system`
-            `chmod -R 777 /usr/lib/systemd/system`
-             fi
+function check_file()
+{
+    if test ! -d "/usr/lib/systemd/system/";then
+        `mkdir /usr/lib/systemd/system`
+        `chmod -R 777 /usr/lib/systemd/system`
+    fi
 }
-check_nor_file(){
-           `rm -rf "$(pwd)"/gost`
-             `rm -rf "$(pwd)"/gost.service`
-             `rm -rf "$(pwd)"/config.json`
-             `rm -rf /etc/gost`
-             `rm -rf /usr/lib/systemd/system/gost.service`
-             `rm -rf /usr/bin/gost`
+function check_nor_file()
+{
+    `rm -rf "$(pwd)"/gost`
+    `rm -rf "$(pwd)"/gost.service`
+    `rm -rf "$(pwd)"/config.json`
+    `rm -rf /etc/gost`
+    `rm -rf /usr/lib/systemd/system/gost.service`
+    `rm -rf /usr/bin/gost`
 }
-
 function Install_ct()
 {
     check_root
@@ -109,19 +109,18 @@ function Install_ct()
     `systemctl enable gost && systemctl restart gost`
     echo "------------------------------"
     if test -a /usr/bin/gost -a /usr/lib/systemctl/gost.service -a /etc/gost/config.json;then
-        echo "${Green_font_prefix}gost似乎安装成功${Font_color_suffix}"
+        echo "gost安装成功"
         `rm -rf "$(pwd)"/gost`
         `rm -rf "$(pwd)"/gost.service`
         `rm -rf "$(pwd)"/config.json`
     else
-        echo "${Red_font_prefix}gost没有安装成功，可以在Github[EasyGost]中提交issue${Font_color_suffix}"
+        echo "gost没有安装成功，可以在Github[EasyGost]中提交issue"
         `rm -rf   "$(pwd)"/gost`
         `rm -rf "$(pwd)"/gost.service`
         `rm -rf "$(pwd)"/config.json`
         `rm -rf "$(pwd)"/gost.sh`
     fi
 }
-
 function Uninstall_ct()
 {
     `rm -rf /usr/bin/gost`
@@ -130,25 +129,21 @@ function Uninstall_ct()
     `rm -rf "$(pwd)"/gost.sh`
     echo "gost已经成功删除"
 }
-
 function Start_ct()
 {
     `systemctl start gost`
     echo "已启动"
 }
-
 function Stop_ct()
 {
     `systemctl stop gost`
     echo "已停止"  
 }
-
 function Restart_ct()
 {
     `systemctl restart gost`
     echo "已重启"  
 }
-
 function read_protocol()
 {
     echo -e "请问你需要进行哪种转发设置："
@@ -175,32 +170,33 @@ function read_protocol()
         exit
     fi
 }
-
 function read_s_port()
 {
+    echo -e "------------------------------------------------------------------"
+    echo -e "------------------------------------------------------------------"
     echo -e "请问你要将本机哪个端口接收到的流量进行转发?"
     read -p "请输入: " flag_b
 }
-
 function read_d_ip()
 {
+    echo -e "------------------------------------------------------------------"
+    echo -e "------------------------------------------------------------------"
     echo -e "请问你要将本机从${flag_b}接收到的流量转发向哪个IP或域名?"
     echo -e "注: IP既可以是[远程机器/当前机器]的公网IP, 也可是以本机本地回环IP(即127.0.0.1)"
     echo -e "    具体IP地址的填写, 取决于接收该流量的服务正在监听的IP(详见: https://github.com/stsdust/EasyGost)"
     read -p "请输入: " flag_c
 }
-
 function read_d_port()
 {
+    echo -e "------------------------------------------------------------------"
+    echo -e "------------------------------------------------------------------"
     echo -e "请问你要将本机从${flag_b}接收到的流量转发向${flag_c}的哪个端口?"
     read -p "请输入: " flag_d
 }
-
 function writerawconf()
 {
     echo $flag_a"/"$flag_b"#"$flag_c"#"$flag_d >> $raw_conf_path
 }
-
 function rawconf()
 {
     read_protocol
@@ -209,7 +205,6 @@ function rawconf()
     read_d_port
     writerawconf
 }
-
 function eachconf_retrieve()
 {
     d_server=${trans_conf#*#}
@@ -219,7 +214,6 @@ function eachconf_retrieve()
     s_port=${flag_s_port#*/}
     is_encrypt=${flag_s_port%/*}
 }
-
 function confstart()
 {
     echo "{
@@ -227,20 +221,17 @@ function confstart()
     \"Retries\": 0,
     \"ServeNodes\": [" >> $gost_conf_path
 }
-
 function multiconfstart()
 {
     echo "        {
             \"Retries\": 0,
             \"ServeNodes\": [" >> $gost_conf_path
 }
-
 function conflast()
 {
     echo "    ]
 }" >> $gost_conf_path
 }
-
 function multiconflast()
 {
     if [ $i -eq $count_line ]; then
@@ -251,7 +242,6 @@ function multiconflast()
         }," >> $gost_conf_path
     fi
 }
-
 function method()
 {
     if [ $i -eq 1 ]; then
@@ -284,10 +274,8 @@ function method()
         else
             echo "config error"
         fi
-
     fi
 }
-
 function writeconf()
 {
     count_line=$(awk 'END{print NR}' $raw_conf_path)
@@ -316,7 +304,6 @@ function writeconf()
         fi
     done
 }
-
 function show_all_conf()
 {
     echo -e "                      GOST 配置                        "
@@ -342,7 +329,6 @@ function show_all_conf()
         echo -e "--------------------------------------------------------"
     done
 }
-
 echo && echo -e "  gost 一键安装配置脚本
   -------- 由STSDUST制作 -------- 原脚本来自 fiisi.com --------
   特性: 本脚本采用systemd及gost配置文件对gost进行管理
