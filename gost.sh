@@ -67,7 +67,7 @@ function check_new_ver()
 {
     ct_new_ver=$(wget --no-check-certificate -qO- -t2 -T3 https://api.github.com/repos/ginuerzh/gost/releases/latest| grep "tag_name"| head -n 1| awk -F ":" '{print $2}'| sed 's/\"//g;s/,//g;s/ //g;s/v//g')
     if [[ -z ${ct_new_ver} ]]; then
-        ct_new_ver="2.11.0"
+        ct_new_ver="2.11.1"
         echo -e "${Error} gost 最新版本获取失败，正在下载v${ct_new_ver}版"
         # read -e -p "请输入版本号 [ 格式 x.x.xx , 如 0.8.21 ] :" ct_new_ver
         #[[ -z "${ct_new_ver}" ]] && echo "取消..." && exit 1
@@ -100,13 +100,13 @@ function Install_ct()
     check_sys
     check_new_ver
     `rm -rf gost-linux-"$bit"-"$ct_new_ver".gz`
-    `wget --no-check-certificate https://hub.stsdust.cf/ginuerzh/gost/releases/download/v"$ct_new_ver"/gost-linux-"$bit"-"$ct_new_ver".gz`
+    `wget --no-check-certificate https://github.com/ginuerzh/gost/releases/download/v"$ct_new_ver"/gost-linux-"$bit"-"$ct_new_ver".gz`
     `gunzip gost-linux-"$bit"-"$ct_new_ver".gz`
     `mv gost-linux-"$bit"-"$ct_new_ver" gost`
     `mv gost /usr/bin/gost`
     `chmod -R 777 /usr/bin/gost`
-    `wget --no-check-certificate https://hub.stsdust.cf/stsdust/EasyGost/raw/master/gost.service && chmod -R 777 gost.service && mv gost.service /usr/lib/systemd/system`
-    `mkdir /etc/gost && wget --no-check-certificate https://hub.stsdust.cf/stsdust/EasyGost/raw/master/config.json && mv config.json /etc/gost && chmod -R 777 /etc/gost`
+    `wget --no-check-certificate https://raw.githubusercontent.com/xxhjkl/EasyGost/master/gost.service && chmod -R 777 gost.service && mv gost.service /usr/lib/systemd/system`
+    `mkdir /etc/gost && wget --no-check-certificate https://raw.githubusercontent.com/xxhjkl/EasyGost/master/config.json && mv config.json /etc/gost && chmod -R 777 /etc/gost`
     `systemctl enable gost && systemctl restart gost`
     echo "------------------------------"
     if test -a /usr/bin/gost -a /usr/lib/systemctl/gost.service -a /etc/gost/config.json;then
@@ -147,18 +147,19 @@ function Restart_ct()
 }
 function read_protocol()
 {
-    echo -e "请问你需要进行哪种转发设置："
+    echo -e "请问您要设置哪种转发协议: "
     echo -e "-----------------------------------"
-    echo -e "1. tcp+udp流量转发, 不加密"
+    echo -e "[1] tcp+udp流量转发, 不加密"
     echo -e "说明: 一般设置在中转流量的机器上, 如国内机上"
     echo -e "-----------------------------------"
-    echo -e "2. relay+tls加密流量转发"
-    echo -e "说明: 用于转发原本加密等级较低的流量, 一般设置在中转流量的机器上, 如国内机上"
+    echo -e "[2] relay+tls加密流量转发"
+    echo -e "说明: (1)用于转发原本加密等级较低的流量, 一般设置在中转流量的机器上, 如国内机上"
+    echo -e "      (2)选择此协议意味着你还有一台机器用于接收此加密流量, 之后须在那台机器上配置协议[3]进行对接"
     echo -e "-----------------------------------"
-    echo -e "3. 解密由gost传输而来的流量并转发"
+    echo -e "[3] 解密由gost传输而来的流量并转发"
     echo -e "说明: 对于经由gost加密中转的流量, 通过此选项进行解密并转发给本机的其他服务端口或转发给其他远程机器, 一般设置在用于接收中转流量的国外机器上"
     echo -e "-----------------------------------"
-    read -p "请选择：" numprotocol
+    read -p "请选择转发协议: " numprotocol
 
     if [ "$numprotocol" = "1" ]; then
         flag_a="nonencrypt"
